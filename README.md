@@ -1,583 +1,598 @@
 # Workforce Management System (WMS)
 
-A full-stack workforce management application built for care agencies. It handles GPS-verified attendance, shift scheduling, automated payroll, training, documents, internal messaging, absence tracking, and an AI assistant — all behind a JWT-authenticated REST API.
+**Author:** Tayah Brown  
+**Degree:** BSc Computer Science  
+**Submission Year:** 2026  
+
+A full-stack web application designed for care agency workforce management. The system provides GPS-verified attendance tracking, automated payroll processing, shift scheduling, training management, internal messaging, document storage, absence tracking, gamification, and an AI assistant — all behind a JWT-authenticated REST API.
 
 ---
 
 ## Table of Contents
 
-1. [Features](#features)
-2. [Tech Stack](#tech-stack)
-3. [Project Structure](#project-structure)
-4. [Getting Started](#getting-started)
-5. [Demo Accounts](#demo-accounts)
-6. [API Reference](#api-reference)
-7. [Database Schema](#database-schema)
-8. [Security](#security)
-9. [Configuration](#configuration)
-10. [Running Tests](#running-tests)
+1. [System Requirements](#1-system-requirements)
+2. [Complete File Listing](#2-complete-file-listing)
+3. [Third-Party Dependencies](#3-third-party-dependencies)
+4. [Installation Guide](#4-installation-guide)
+5. [Running the Application](#5-running-the-application)
+6. [Running the Tests](#6-running-the-tests)
+7. [Demo Accounts](#7-demo-accounts)
+8. [System Features](#8-system-features)
+9. [API Reference](#9-api-reference)
+10. [Database Schema](#10-database-schema)
+11. [Configuration](#11-configuration)
 
 ---
 
-## Features
+## 1. System Requirements
 
-### Employee Features
-- **GPS Check-In / Check-Out** — verifies the employee is physically on-site using the Haversine formula
-- **My Schedule** — weekly calendar view of assigned shifts; confirm shifts directly
-- **Available Shifts** — browse and claim open shifts posted by admin
-- **Payroll** — view earnings breakdown (regular + overtime) for any date range
-- **Absences** — submit sick leave, holiday, or emergency absence requests; track approval status
-- **Training** — read and complete mandatory training modules; progress bar tracks completion
-- **Documents** — browse company policies and procedures (Health & Safety, HR, GDPR, etc.)
-- **Messages** — internal inbox/sent messaging with admin and colleagues
-- **AI Assistant** — chat interface for shift, pay, and policy questions
-- **Gamification** — earn points and badges for GPS-verified check-ins and streaks; leaderboard
+### Operating System
+The application is cross-platform and has been tested on:
+- **Windows 10 / Windows 11** (primary development environment)
+- **macOS 12 Monterey or later**
+- **Ubuntu 20.04 LTS or later**
 
-### Admin Features
-- All employee features plus full management views
-- **Staff Management** — create, update, deactivate employee accounts; set hourly rates
-- **Location Management** — manage care facilities with GPS coordinates and tolerance radius
-- **Attendance Overview** — view all staff attendance with date/location filters
-- **Full Payroll** — generate payroll for all employees; export to Excel
-- **Schedule Management** — create, assign, and cancel shifts; post open shifts
-- **Absence Review** — approve or reject absence requests with notes
-- **Reports** — attendance summary, daily activity, location analytics, staff analytics; Excel export
+### Required Software
 
----
+| Software | Minimum Version | Purpose |
+|----------|----------------|---------|
+| **Python** | 3.8 | Backend server runtime |
+| **pip** | 21.0 | Python package manager |
+| **Node.js** | 18.0 | Frontend build toolchain |
+| **npm** | 9.0 | Node package manager |
+| **Git** | 2.30 | Version control (for cloning) |
 
-## Tech Stack
+No database server installation is required. The application uses **SQLite**, which is embedded in Python's standard library and creates the database file automatically on first run.
 
-### Backend
-| Component | Technology |
-|-----------|-----------|
-| Framework | Flask 3.0 |
-| Database | SQLite via SQLAlchemy |
-| Auth | Flask-JWT-Extended (access + refresh tokens) |
-| CORS | Flask-CORS |
-| Payroll export | pandas + openpyxl |
-| AI Chat | Anthropic Claude API |
-| Testing | pytest + pytest-flask |
+No internet connection is required to run the application after dependencies are installed, except for the optional AI Chat feature which requires an Anthropic API key.
 
-### Frontend
-| Component | Technology |
-|-----------|-----------|
-| UI Library | React 18 |
-| Router | React Router v6 |
-| HTTP client | Axios |
-| Charts | Recharts |
-| Build tool | Vite 5 |
+### Checking Installed Versions
+
+```bash
+python --version        # Must be 3.8 or later
+pip --version
+node --version          # Must be 18 or later
+npm --version
+```
 
 ---
 
-## Project Structure
+## 2. Complete File Listing
 
 ```
 workforce-management-system/
 │
-├── backend/
-│   ├── run.py                  # Entry point — creates app, seeds DB, starts server
-│   ├── wsgi.py                 # WSGI entry point for production deployment
-│   ├── requirements.txt        # Python dependencies
-│   │
-│   ├── app/
-│   │   ├── __init__.py         # App factory (create_app)
-│   │   ├── config.py           # Development / production config classes
-│   │   ├── extensions.py       # SQLAlchemy, JWT, CORS extension singletons
-│   │   ├── seeds.py            # Database seeder — users, locations, shifts, training, docs
-│   │   │
-│   │   ├── models/             # SQLAlchemy ORM models
-│   │   │   ├── user.py         # User (employees + admins)
-│   │   │   ├── location.py     # Care facility locations
-│   │   │   ├── check_in.py     # Attendance records with GPS
-│   │   │   ├── shift.py        # Scheduled and open shifts
-│   │   │   ├── absence.py      # Absence requests
-│   │   │   ├── message.py      # Internal messages
-│   │   │   ├── document.py     # Company documents
-│   │   │   ├── training.py     # Training modules + completions
-│   │   │   ├── gamification.py # Badges, points, streaks
-│   │   │   └── notification.py # In-app notifications
-│   │   │
-│   │   ├── routes/             # Flask blueprints (one per domain)
-│   │   │   ├── auth.py         # /api/auth — register, login, refresh, logout, me
-│   │   │   ├── users.py        # /api/users — CRUD
-│   │   │   ├── locations.py    # /api/locations — CRUD
-│   │   │   ├── attendance.py   # /api/checkin, /api/checkout, /api/attendance
-│   │   │   ├── shifts.py       # /api/shifts — scheduling + open shifts
-│   │   │   ├── payroll.py      # /api/payroll — earnings + Excel export
-│   │   │   ├── absences.py     # /api/absences — requests + admin review
-│   │   │   ├── documents.py    # /api/documents
-│   │   │   ├── training.py     # /api/training — modules + progress
-│   │   │   ├── messages.py     # /api/messages — inbox + sent
-│   │   │   ├── gamification.py # /api/gamification — profile, leaderboard, badges
-│   │   │   ├── reports.py      # /api/reports — analytics + Excel export
-│   │   │   ├── dashboard.py    # /api/dashboard/stats
-│   │   │   ├── notifications.py# /api/notifications
-│   │   │   └── chat.py         # /api/chat — AI assistant
-│   │   │
-│   │   └── services/
-│   │       └── gamification_service.py  # Point and badge award logic
-│   │
-│   └── tests/
-│       └── test_auth.py        # pytest tests for auth endpoints
+├── README.md                           # This file
+├── .gitignore                          # Git exclusion rules
 │
-├── frontend/
-│   ├── index.html              # Vite HTML entry point
-│   ├── vite.config.js          # Vite build configuration
-│   ├── package.json
+├── backend/                            # Flask REST API
+│   ├── run.py                          # Entry point — starts the server
+│   ├── wsgi.py                         # WSGI entry point for production
+│   ├── requirements.txt                # All Python dependencies with versions
+│   ├── .env.example                    # Template for environment variables
 │   │
-│   ├── src/
-│   │   ├── main.jsx            # React root — mounts App with providers
-│   │   ├── App.jsx             # Router setup and route definitions
-│   │   ├── index.css           # Global styles and CSS variables
+│   ├── app/                            # Main application package
+│   │   ├── __init__.py                 # App factory (create_app function)
+│   │   ├── config.py                   # Development / production configuration
+│   │   ├── extensions.py               # SQLAlchemy, JWT, CORS singleton objects
+│   │   ├── seeds.py                    # Database seeder with realistic sample data
 │   │   │
-│   │   ├── api/
-│   │   │   └── client.js       # Axios instance + all API call functions
+│   │   ├── models/                     # SQLAlchemy ORM database models
+│   │   │   ├── __init__.py
+│   │   │   ├── user.py                 # Employee and admin accounts
+│   │   │   ├── location.py             # Care facility locations with GPS coords
+│   │   │   ├── check_in.py             # Attendance records with GPS verification
+│   │   │   ├── shift.py                # Scheduled and open shifts
+│   │   │   ├── absence.py              # Absence requests and approvals
+│   │   │   ├── message.py              # Internal messages between users
+│   │   │   ├── document.py             # Company policy and procedure documents
+│   │   │   ├── training.py             # Training modules and completion records
+│   │   │   ├── gamification.py         # Badges, points, and streaks
+│   │   │   └── notification.py         # In-app notifications
 │   │   │
-│   │   ├── context/
-│   │   │   └── AuthContext.jsx # Auth state — user, login(), logout()
+│   │   ├── routes/                     # Flask blueprints — one per feature area
+│   │   │   ├── __init__.py             # Exports all blueprints
+│   │   │   ├── auth.py                 # /api/auth — register, login, logout
+│   │   │   ├── users.py                # /api/users — user management
+│   │   │   ├── locations.py            # /api/locations — care facility CRUD
+│   │   │   ├── attendance.py           # /api/checkin, /api/checkout
+│   │   │   ├── shifts.py               # /api/shifts — scheduling + open shifts
+│   │   │   ├── payroll.py              # /api/payroll — earnings + Excel export
+│   │   │   ├── absences.py             # /api/absences — requests + admin review
+│   │   │   ├── documents.py            # /api/documents — policy library
+│   │   │   ├── training.py             # /api/training — modules + progress
+│   │   │   ├── messages.py             # /api/messages — inbox and sent
+│   │   │   ├── gamification.py         # /api/gamification — points and badges
+│   │   │   ├── reports.py              # /api/reports — analytics + Excel export
+│   │   │   ├── dashboard.py            # /api/dashboard — summary statistics
+│   │   │   ├── notifications.py        # /api/notifications
+│   │   │   └── chat.py                 # /api/chat — AI assistant
 │   │   │
-│   │   ├── components/
-│   │   │   ├── Layout.jsx      # Sidebar + header shell
-│   │   │   ├── ProtectedRoute.jsx # Redirects unauthenticated users to /login
-│   │   │   ├── Modal.jsx       # Reusable modal dialog
-│   │   │   ├── StatCard.jsx    # Dashboard stat tile
-│   │   │   ├── LoadingSpinner.jsx
-│   │   │   └── Toast.jsx       # Toast notification system
+│   │   ├── services/                   # Business logic layer
+│   │   │   ├── __init__.py
+│   │   │   ├── gamification_service.py # Point award and badge unlock logic
+│   │   │   ├── gps_service.py          # Haversine GPS distance calculation
+│   │   │   ├── payroll_service.py      # Payroll calculation logic
+│   │   │   └── export_service.py       # Excel file generation
 │   │   │
-│   │   ├── pages/
-│   │   │   ├── Login.jsx       # Sign-in + self-registration form
-│   │   │   ├── Dashboard.jsx   # Stats overview
-│   │   │   ├── CheckIn.jsx     # GPS check-in / check-out
-│   │   │   ├── Attendance.jsx  # Attendance history table
-│   │   │   ├── Schedule.jsx    # Weekly shift calendar (admin table + employee view)
-│   │   │   ├── AvailableShifts.jsx # Open shift board for employees
-│   │   │   ├── Payroll.jsx     # Earnings and export
-│   │   │   ├── Absence.jsx     # Absence requests
-│   │   │   ├── Messages.jsx    # Internal messaging
-│   │   │   ├── Documents.jsx   # Policy library
-│   │   │   ├── Training.jsx    # Training modules
-│   │   │   ├── Gamification.jsx# Points, badges, leaderboard
-│   │   │   ├── Chat.jsx        # AI assistant
-│   │   │   └── admin/          # Admin-only pages
-│   │   │
-│   │   └── utils/
-│   │       └── formatters.js   # Date, time, currency formatting helpers
+│   │   └── utils/                      # Shared utilities
+│   │       ├── __init__.py
+│   │       └── decorators.py           # @admin_required route decorator
 │   │
-│   └── dist/                   # Production build output (served statically)
+│   └── tests/                          # pytest test suite
+│       ├── __init__.py
+│       ├── conftest.py                 # Fixtures and test database setup
+│       ├── test_auth.py                # 17 tests — registration, login, tokens
+│       ├── test_attendance.py          # 12 tests — check-in, check-out, GPS
+│       └── test_gamification.py        # 13 tests — points, badges, leaderboard
 │
-└── README.md
+└── frontend/                           # React single-page application
+    ├── index.html                      # Vite HTML entry point
+    ├── vite.config.js                  # Vite build configuration
+    ├── package.json                    # Node dependencies and scripts
+    ├── package-lock.json               # Locked dependency versions
+    │
+    ├── public/                         # Static assets served as-is
+    │   ├── manifest.json               # PWA manifest
+    │   ├── sw.js                       # Service worker
+    │   └── icons/
+    │       └── icon-192.svg            # App icon
+    │
+    └── src/                            # React source code
+        ├── main.jsx                    # React root — mounts App with providers
+        ├── App.jsx                     # Router configuration and route definitions
+        ├── index.css                   # Global styles and CSS custom properties
+        │
+        ├── api/
+        │   └── client.js               # Axios instance and all API call functions
+        │
+        ├── context/
+        │   └── AuthContext.jsx         # Authentication state (user, login, logout)
+        │
+        ├── components/                 # Reusable UI components
+        │   ├── Layout.jsx              # Sidebar navigation and page shell
+        │   ├── ProtectedRoute.jsx      # Redirects unauthenticated users to login
+        │   ├── Modal.jsx               # Accessible modal dialog component
+        │   ├── StatCard.jsx            # Dashboard metric tile
+        │   ├── LoadingSpinner.jsx      # Loading indicator
+        │   └── Toast.jsx               # Toast notification system
+        │
+        ├── pages/                      # One component per application page
+        │   ├── Login.jsx               # Sign-in and employee self-registration
+        │   ├── Dashboard.jsx           # Overview statistics
+        │   ├── CheckIn.jsx             # GPS check-in / check-out
+        │   ├── Attendance.jsx          # Attendance history table
+        │   ├── Schedule.jsx            # Weekly shift calendar
+        │   ├── AvailableShifts.jsx     # Open shift board for employees
+        │   ├── Payroll.jsx             # Earnings breakdown and Excel export
+        │   ├── Absence.jsx             # Absence request submission and tracking
+        │   ├── Messages.jsx            # Internal inbox and sent messages
+        │   ├── Documents.jsx           # Company policy document library
+        │   ├── Training.jsx            # Training modules with progress tracking
+        │   ├── Gamification.jsx        # Points, badges, and leaderboard
+        │   ├── Chat.jsx                # AI assistant chat interface
+        │   └── admin/                  # Admin-only pages
+        │       ├── AbsenceAdmin.jsx    # Review and approve/reject absence requests
+        │       ├── Achievements.jsx    # Badge management
+        │       ├── DocumentAdmin.jsx   # Create and manage company documents
+        │       ├── Locations.jsx       # Care facility management
+        │       ├── NotificationsAdmin.jsx  # Send notifications to staff
+        │       ├── Reports.jsx         # Analytics and Excel exports
+        │       └── Users.jsx           # Employee account management
+        │
+        └── utils/
+            └── formatters.js           # Date, time, currency formatting helpers
 ```
+
+**Total files committed:** 88 source files
 
 ---
 
-## Getting Started
+## 3. Third-Party Dependencies
 
-### Prerequisites
-- Python 3.8 or later
-- Node.js 18 or later + npm
-- A modern browser
+### Backend Python Packages (`backend/requirements.txt`)
 
-### 1 — Backend
+| Package | Version | Purpose |
+|---------|---------|---------|
+| flask | 3.0.0 | Web framework |
+| flask-sqlalchemy | 3.1.1 | ORM / database abstraction |
+| flask-jwt-extended | 4.6.0 | JWT authentication |
+| flask-cors | 4.0.0 | Cross-Origin Resource Sharing |
+| werkzeug | 3.0.1 | Password hashing, WSGI utilities |
+| pandas | 2.1.4 | DataFrame creation for Excel export |
+| openpyxl | 3.1.2 | Excel (.xlsx) file generation |
+| python-dotenv | 1.0.0 | Load environment variables from .env |
+| pytest | 7.4.4 | Test framework |
+| pytest-flask | 1.3.0 | Flask integration for pytest |
+| anthropic | ≥0.40.0 | Anthropic Claude API client (AI chat) |
+
+All dependencies are installed automatically via `pip install -r requirements.txt`.
+
+### Frontend Node Packages (`frontend/package.json`)
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| react | 18.2.0 | UI library |
+| react-dom | 18.2.0 | React DOM renderer |
+| react-router-dom | 6.21.0 | Client-side routing |
+| axios | 1.6.2 | HTTP client |
+| recharts | 2.10.3 | Chart components |
+| vite | 5.0.8 | Build tool and dev server |
+| @vitejs/plugin-react | 4.2.1 | Vite React plugin |
+
+All dependencies are installed automatically via `npm install`.
+
+---
+
+## 4. Installation Guide
+
+Follow these steps exactly, in order, on a fresh machine.
+
+### Step 1 — Clone the repository
+
+```bash
+git clone https://github.com/tayah2/workforce-management-system.git
+cd workforce-management-system
+```
+
+### Step 2 — Install backend dependencies
 
 ```bash
 cd backend
-
-# Install Python dependencies
 pip install -r requirements.txt
-
-# Start the server (auto-creates and seeds the database on first run)
-python run.py
 ```
 
-The API is available at **http://localhost:5000**
+This installs all Python packages listed in `requirements.txt`. If you have both Python 2 and Python 3 installed, use `pip3` instead of `pip`.
 
-> The database file is created at `backend/instance/wms.db`. To reset it and re-seed from scratch, delete that file and restart.
+### Step 3 — Install frontend dependencies
 
-### 2 — Frontend (development)
+Open a second terminal window in the project root:
 
 ```bash
 cd frontend
-
-# Install Node dependencies (first time only)
 npm install
+```
 
-# Start the Vite dev server with hot reload
+This reads `package-lock.json` and installs the exact same dependency versions used during development. The `node_modules` folder will be created (approximately 200 MB).
+
+### Step 4 — (Optional) Configure environment variables
+
+Copy the example environment file and edit it if needed:
+
+```bash
+cd backend
+copy .env.example .env        # Windows
+# cp .env.example .env        # macOS / Linux
+```
+
+The application runs without any changes to `.env`. The only setting that requires a real value is `ANTHROPIC_API_KEY` if you want the AI Chat feature to work.
+
+No database setup is required. SQLite creates the database file (`instance/wms.db`) automatically when the server starts for the first time.
+
+---
+
+## 5. Running the Application
+
+Both the backend and frontend must be running at the same time in separate terminal windows.
+
+### Terminal 1 — Start the backend server
+
+```bash
+cd backend
+python run.py
+```
+
+Expected output:
+```
+Seeding database...
+Database seeded successfully.
+ * Running on http://0.0.0.0:5000
+ * Debug mode: on
+```
+
+The backend is available at **http://localhost:5000**
+
+On first run, the database is created and seeded automatically with:
+- 1 admin account and 10 employee accounts
+- 8 Leicester-area care home locations
+- 30 days of sample attendance history
+- Training modules, company documents, messages, and absence records
+
+> **Windows note:** If Python is not on your PATH, use `py run.py` instead of `python run.py`.
+
+### Terminal 2 — Start the frontend
+
+#### Option A — Development server (recommended for examiners)
+
+```bash
+cd frontend
 npm run dev
 ```
 
 Open **http://localhost:5173** in your browser.
 
-### 2 — Frontend (production build)
+#### Option B — Production build (pre-compiled)
 
 ```bash
 cd frontend
-npm run build      # compiles to frontend/dist/
-npm run preview    # serves the built dist on http://localhost:4173
+npm run build
+npm run preview
+```
+
+Open **http://localhost:4173** in your browser.
+
+### Accessing the Application
+
+Once both servers are running, open your browser and go to:
+
+```
+http://localhost:5173
+```
+
+You will see the login page. Use the demo credentials below.
+
+---
+
+## 6. Running the Tests
+
+With the backend dependencies installed:
+
+```bash
+cd backend
+python -m pytest tests/ -v
+```
+
+**Expected result: 42 tests, all passing (100% pass rate)**
+
+```
+tests/test_attendance.py::TestCheckIn::test_checkin_valid_gps PASSED
+tests/test_attendance.py::TestCheckIn::test_checkin_outside_radius PASSED
+... (42 total)
+======================= 42 passed in 2.51s =======================
+```
+
+The tests use an isolated in-memory SQLite database and do not affect the development database.
+
+To run a specific test file:
+
+```bash
+python -m pytest tests/test_auth.py -v        # Authentication tests (17 tests)
+python -m pytest tests/test_attendance.py -v  # Attendance tests (12 tests)
+python -m pytest tests/test_gamification.py -v # Gamification tests (13 tests)
 ```
 
 ---
 
-## Demo Accounts
+## 7. Demo Accounts
 
-All employee passwords are `password123`.
+All employee accounts share the password `password123`.
 
-| Role | Username | Name | Hourly Rate |
-|------|----------|------|-------------|
-| Admin | `admin` | Admin User | — |
-| Employee | `jsmith` | John Smith | £13.00 |
-| Employee | `ejones` | Emily Jones | £12.50 |
-| Employee | `mwilson` | Michael Wilson | £14.00 |
-| Employee | `sbrown` | Sarah Brown | £12.00 |
-| Employee | `dlee` | David Lee | £13.50 |
-| Employee | `apatel` | Amira Patel | £12.75 |
-| Employee | `cthomas` | Claire Thomas | £13.25 |
-| Employee | `rchoudry` | Raj Choudry | £12.50 |
-| Employee | `lbailey` | Laura Bailey | £14.50 |
-| Employee | `omurphy` | Oliver Murphy | £11.75 |
+| Role | Username | Password | Name |
+|------|----------|----------|------|
+| **Admin** | `admin` | `admin123` | Admin User |
+| Employee | `jsmith` | `password123` | John Smith |
+| Employee | `ejones` | `password123` | Emily Jones |
+| Employee | `mwilson` | `password123` | Michael Wilson |
+| Employee | `sbrown` | `password123` | Sarah Brown |
+| Employee | `dlee` | `password123` | David Lee |
+| Employee | `apatel` | `password123` | Amira Patel |
+| Employee | `cthomas` | `password123` | Claire Thomas |
+| Employee | `rchoudry` | `password123` | Raj Choudry |
+| Employee | `lbailey` | `password123` | Laura Bailey |
+| Employee | `omurphy` | `password123` | Oliver Murphy |
 
-You can also register a brand-new account from the login screen — new accounts are created as `employee` role.
+### Self-Registration
+
+New employee accounts can be created from the login screen by clicking **Register here**. A company registration code is required: **`CARE2024`**
+
+New accounts are always created with the `employee` role. Admin accounts cannot be self-registered.
 
 ---
 
-## API Reference
+## 8. System Features
 
-All endpoints are prefixed with `/api`. Protected endpoints require an `Authorization: Bearer <token>` header.
+### Employee Features
+- GPS check-in and check-out with location verification
+- Weekly shift calendar with shift confirmation
+- Available shifts board — browse and claim open shifts
+- Payroll view with regular and overtime breakdown
+- Absence request submission (sick, holiday, emergency, other)
+- Mandatory training modules with progress tracking
+- Company document library (policies, procedures, H&S)
+- Internal inbox and sent messages
+- Points, badges, and leaderboard (gamification)
+- AI assistant for shift, pay, and policy questions
+
+### Admin Features
+- All employee features
+- Staff management — create, update, deactivate accounts
+- Location management — add/edit care facilities with GPS coordinates
+- Full attendance overview with filters
+- Full payroll for all employees with Excel export
+- Shift scheduling — assign, cancel, post open shifts
+- Absence approval/rejection with admin notes
+- Attendance and staff analytics reports with Excel export
+
+---
+
+## 9. API Reference
+
+All endpoints are prefixed with `/api`. Protected endpoints require the header:
+```
+Authorization: Bearer <access_token>
+```
 
 ### Authentication — `/api/auth`
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/register` | — | Register a new employee account |
-| POST | `/login` | — | Authenticate and receive JWT tokens |
-| POST | `/refresh` | Refresh token | Get a new access token |
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/register` | — | Register a new employee (requires registration code) |
+| POST | `/login` | — | Login — returns access and refresh JWT tokens |
+| POST | `/refresh` | Refresh token | Obtain a new access token |
 | POST | `/logout` | Required | Blacklist the current token |
 | GET | `/me` | Required | Get the authenticated user's profile |
 
 ### Users — `/api/users`
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/users` | Required | List all users (admin) or just self (employee) |
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/users` | Required | List all users (admin) or own profile (employee) |
 | GET | `/users/:id` | Required | Get a specific user |
 | PUT | `/users/:id` | Required | Update user details |
 | DELETE | `/users/:id` | Admin | Deactivate a user (soft delete) |
 
-### Locations — `/api/locations`
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/locations` | Required | List active locations |
-| POST | `/locations` | Admin | Create a new care facility |
-| PUT | `/locations/:id` | Admin | Update a location |
-| DELETE | `/locations/:id` | Admin | Deactivate a location |
-
 ### Attendance — `/api`
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/checkin` | Required | GPS check-in |
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/checkin` | Required | GPS check-in at a care facility |
 | POST | `/checkout` | Required | GPS check-out |
-| GET | `/attendance` | Required | List attendance records (filterable) |
-| GET | `/attendance/current` | Required | Get current open check-in |
+| GET | `/attendance` | Required | Attendance records with optional filters |
+| GET | `/attendance/current` | Required | Current open check-in |
 
 ### Shifts — `/api/shifts`
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
 | GET | `/shifts` | Required | List shifts |
 | GET | `/shifts/open` | Required | List unclaimed open shifts |
-| POST | `/shifts` | Admin | Create a shift (assign or leave open) |
-| PUT | `/shifts/:id` | Required | Update shift (e.g. confirm, cancel) |
-| DELETE | `/shifts/:id` | Admin | Delete a shift |
+| POST | `/shifts` | Admin | Create a shift |
+| PUT | `/shifts/:id` | Required | Update shift status |
 | POST | `/shifts/:id/claim` | Employee | Claim an open shift |
-| POST | `/shifts/:id/release` | Employee | Release a claimed shift |
 
 ### Payroll — `/api/payroll`
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
 | GET | `/payroll` | Required | Payroll summary for a date range |
-| GET | `/payroll/export` | Required | Download payroll as Excel |
+| GET | `/payroll/export` | Required | Download payroll as Excel (.xlsx) |
 
 ### Absences — `/api/absences`
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
 | GET | `/absences` | Required | List absences (own or all for admin) |
 | POST | `/absences` | Required | Submit an absence request |
-| PUT | `/absences/:id` | Admin | Approve or reject with notes |
-
-### Documents — `/api/documents`
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/documents` | Required | List all active documents |
-| POST | `/documents` | Admin | Create a document |
-| PUT | `/documents/:id` | Admin | Update a document |
-| DELETE | `/documents/:id` | Admin | Deactivate a document |
+| PUT | `/absences/:id` | Admin | Approve or reject with admin notes |
 
 ### Training — `/api/training`
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
 | GET | `/training/modules` | Required | List training modules |
-| GET | `/training/progress` | Required | Get own completion progress |
-| POST | `/training/modules/:id/complete` | Required | Mark a module as complete |
-
-### Messages — `/api/messages`
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/messages/inbox` | Required | Received messages |
-| GET | `/messages/sent` | Required | Sent messages |
-| POST | `/messages` | Required | Send a message |
-
-### Gamification — `/api/gamification`
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/gamification/profile` | Required | Points, badges, and streak for current user |
-| GET | `/gamification/leaderboard` | Required | Top employees by points |
-| GET | `/gamification/badges` | Required | Badges earned by current user |
-| GET | `/gamification/weekly-challenge` | Required | Current weekly challenge |
+| GET | `/training/progress` | Required | Own completion progress |
+| POST | `/training/modules/:id/complete` | Required | Mark a module complete |
 
 ### Reports — `/api/reports`
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/reports/attendance-summary` | Required | Aggregate stats for a date range |
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/reports/attendance-summary` | Required | Aggregate attendance statistics |
 | GET | `/reports/daily-activity` | Required | Day-by-day breakdown |
 | GET | `/reports/location-analytics` | Admin | Per-location stats |
 | GET | `/reports/staff-analytics` | Admin | Per-employee stats |
 | GET | `/reports/export` | Required | Attendance report as Excel |
 
-### Dashboard — `/api/dashboard`
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/dashboard/stats` | Required | Summary stats for admin or employee view |
-
-### AI Chat — `/api/chat`
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/chat` | Required | Send message to AI assistant |
-
 ---
 
-## Database Schema
+## 10. Database Schema
 
-### `users`
+The database is SQLite and is created automatically at `backend/instance/wms.db`.
+
+### users
 | Column | Type | Notes |
 |--------|------|-------|
-| id | Integer PK | |
-| username | String | Unique |
-| email | String | Unique |
-| password_hash | String | Werkzeug PBKDF2 |
-| first_name | String | |
-| last_name | String | |
-| role | String | `admin` or `employee` |
-| hourly_rate | Float | Used for payroll calculation |
-| is_active | Boolean | Soft-delete flag |
-| created_at | DateTime | |
+| id | INTEGER PK | Auto-increment |
+| username | VARCHAR | Unique |
+| email | VARCHAR | Unique |
+| password_hash | VARCHAR | Werkzeug PBKDF2-SHA256 |
+| first_name | VARCHAR | |
+| last_name | VARCHAR | |
+| role | VARCHAR | `admin` or `employee` |
+| hourly_rate | FLOAT | Used in payroll calculations |
+| is_active | BOOLEAN | Soft-delete flag |
+| created_at | DATETIME | |
 
-### `locations`
+### locations
 | Column | Type | Notes |
 |--------|------|-------|
-| id | Integer PK | |
-| name | String | Care home name |
-| address | String | |
-| latitude | Float | WGS-84 decimal degrees |
-| longitude | Float | WGS-84 decimal degrees |
-| radius | Float | Tolerance in km (default 0.1 = 100 m) |
-| is_active | Boolean | |
+| id | INTEGER PK | |
+| name | VARCHAR | Care home name |
+| address | VARCHAR | |
+| latitude | FLOAT | WGS-84 decimal degrees |
+| longitude | FLOAT | WGS-84 decimal degrees |
+| radius | FLOAT | GPS tolerance in km (default 0.1) |
+| is_active | BOOLEAN | |
 
-### `check_ins`
+### check_ins
 | Column | Type | Notes |
 |--------|------|-------|
-| id | Integer PK | |
+| id | INTEGER PK | |
 | user_id | FK → users | |
 | location_id | FK → locations | |
-| check_in_time | DateTime | |
-| check_out_time | DateTime | Null if still on shift |
-| check_in_latitude/longitude | Float | Actual GPS coords recorded |
-| check_out_latitude/longitude | Float | |
-| is_check_in_verified | Boolean | True if within radius |
-| is_check_out_verified | Boolean | |
-| break_minutes | Integer | Deducted from hours worked |
-| notes | Text | |
+| check_in_time | DATETIME | |
+| check_out_time | DATETIME | NULL if still on shift |
+| check_in_latitude | FLOAT | Actual GPS coordinates recorded |
+| check_in_longitude | FLOAT | |
+| check_out_latitude | FLOAT | |
+| check_out_longitude | FLOAT | |
+| is_check_in_verified | BOOLEAN | True if within radius |
+| is_check_out_verified | BOOLEAN | |
+| break_minutes | INTEGER | Deducted from hours worked |
+| notes | TEXT | |
 
-### `shifts`
+### shifts
 | Column | Type | Notes |
 |--------|------|-------|
-| id | Integer PK | |
-| user_id | FK → users | Null for open shifts |
+| id | INTEGER PK | |
+| user_id | FK → users | NULL for open/unclaimed shifts |
 | location_id | FK → locations | |
-| scheduled_start | DateTime | |
-| scheduled_end | DateTime | |
-| status | String | `scheduled`, `confirmed`, `cancelled`, `completed` |
-| notes | Text | |
-| created_by | FK → users | Admin who posted the shift |
+| scheduled_start | DATETIME | |
+| scheduled_end | DATETIME | |
+| status | VARCHAR | `scheduled`, `confirmed`, `cancelled`, `completed` |
+| notes | TEXT | |
+| created_by | FK → users | Admin who created the shift |
 
-### `absences`
+### absences
 | Column | Type | Notes |
 |--------|------|-------|
-| id | Integer PK | |
+| id | INTEGER PK | |
 | user_id | FK → users | |
-| date | Date | Start date |
-| end_date | Date | End date for multi-day absences |
-| type | String | `sick`, `holiday`, `emergency`, `other` |
-| reason | Text | |
-| status | String | `pending`, `approved`, `rejected` |
-| admin_notes | Text | Admin review notes |
-| reviewed_by | FK → users | Admin who reviewed |
-| reviewed_at | DateTime | |
-
-### `messages`
-| Column | Type | Notes |
-|--------|------|-------|
-| id | Integer PK | |
-| from_user_id | FK → users | |
-| to_user_id | FK → users | |
-| subject | String | |
-| body | Text | |
-| is_read | Boolean | |
-| parent_id | FK → messages | For threaded replies |
-
-### `documents`
-| Column | Type | Notes |
-|--------|------|-------|
-| id | Integer PK | |
-| title | String | |
-| description | Text | |
-| category | String | `policy`, `procedure`, `health_safety`, `hr`, `training`, `general` |
-| content | Text | Markdown-formatted body |
-| is_active | Boolean | |
-| uploaded_by | FK → users | |
-
-### `training_modules`
-| Column | Type | Notes |
-|--------|------|-------|
-| id | Integer PK | |
-| title | String | |
-| description | Text | |
-| category | String | |
-| content | Text | Markdown body shown in modal |
-| estimated_minutes | Integer | |
-| order_num | Integer | Display order |
-| is_active | Boolean | |
-
-### `training_completions`
-| Column | Type | Notes |
-|--------|------|-------|
-| id | Integer PK | |
-| user_id | FK → users | |
-| module_id | FK → training_modules | |
-| completed_at | DateTime | |
-
-### `badges`, `user_badges`, `point_transactions`, `streaks`
-Gamification tables that track earned badges, point history, and consecutive work-day streaks.
+| date | DATE | Start date |
+| end_date | DATE | End date for multi-day absences |
+| type | VARCHAR | `sick`, `holiday`, `emergency`, `other` |
+| reason | TEXT | |
+| status | VARCHAR | `pending`, `approved`, `rejected` |
+| admin_notes | TEXT | |
+| reviewed_by | FK → users | |
+| reviewed_at | DATETIME | |
 
 ---
 
-## Security
+## 11. Configuration
 
-- **Password hashing** — Werkzeug PBKDF2-SHA256 (never stored in plain text)
-- **JWT access tokens** — 1-hour expiry; signed with `JWT_SECRET_KEY`
-- **JWT refresh tokens** — 30-day expiry; used only to obtain new access tokens
-- **Token blacklisting** — logout adds the token JTI to an in-memory blacklist
-- **Role-based access** — admin-only routes check `user.role == 'admin'` server-side
-- **GPS verification** — Haversine formula used to verify the employee is within the configured radius of the facility
-- **Input validation** — all API inputs validated and sanitised before hitting the database
-- **CORS** — restricted to configured `FRONTEND_URL` (defaults to `*` in development)
+Configuration is managed in `backend/app/config.py` and via environment variables in `backend/.env`.
 
-> **Production note:** Change `SECRET_KEY` and `JWT_SECRET_KEY` in the config before deploying. Consider switching the database to PostgreSQL and storing the JWT blacklist in Redis.
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SECRET_KEY` | `dev-only-change-me` | Flask session secret — change in production |
+| `JWT_SECRET_KEY` | `jwt-dev-only` | JWT signing key — change in production |
+| `DATABASE_URL` | `sqlite:///wms.db` | Database connection string |
+| `REGISTRATION_CODE` | `CARE2024` | Required code for employee self-registration |
+| `ANTHROPIC_API_KEY` | *(empty)* | API key for AI Chat feature (optional) |
+| `FRONTEND_URL` | `http://localhost:5173` | Allowed CORS origin |
 
----
+### GPS Verification
 
-## Configuration
+Each care facility has a configurable `radius` (in kilometres). The default is `0.1 km` (100 metres). The Haversine formula is used to calculate the great-circle distance between the employee's reported GPS coordinates and the facility's registered coordinates. If the distance is within the radius, the check-in is marked as GPS-verified.
 
-Configuration lives in `backend/app/config.py`. The relevant settings:
+### Payroll Calculation
 
-```python
-# Secret keys — CHANGE THESE IN PRODUCTION
-SECRET_KEY = 'wms-secret-key-change-in-production'
-JWT_SECRET_KEY = 'jwt-secret-key-change-in-production'
-
-# Token lifetimes
-JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
-JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
-
-# Database
-SQLALCHEMY_DATABASE_URI = 'sqlite:///wms.db'
-
-# AI Chat (optional — set ANTHROPIC_API_KEY env var)
-ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
-```
-
-To enable the AI assistant, set your Anthropic API key:
-
-```bash
-# Windows
-set ANTHROPIC_API_KEY=sk-ant-...
-
-# macOS / Linux
-export ANTHROPIC_API_KEY=sk-ant-...
-```
-
-### GPS Tolerance
-Each location has a configurable `radius` (in km). The default is `0.1` (100 metres). Adjust this per care home via the admin Locations page or directly in the database.
+1. Hours worked = `(check_out_time − check_in_time)` minus `break_minutes`
+2. Regular hours = up to 40 hours per week at standard hourly rate
+3. Overtime hours = any hours beyond 40 at **1.5×** the hourly rate
+4. Total pay = `(regular_hours × rate) + (overtime_hours × rate × 1.5)`
 
 ---
 
-## Running Tests
-
-```bash
-cd backend
-
-# Run all tests
-pytest tests/ -v
-
-# Run a specific file
-pytest tests/test_auth.py -v
-
-# Run with coverage (requires pytest-cov)
-pip install pytest-cov
-pytest tests/ --cov=app --cov-report=term-missing
-```
-
----
-
-## Payroll Calculation
-
-Payroll is calculated per employee for a selected date range:
-
-1. All completed check-ins (with a check-out time) in the period are fetched.
-2. Hours worked = `(check_out_time − check_in_time)` minus `break_minutes`.
-3. Regular hours = up to 40 hours (standard working week).
-4. Overtime hours = any hours beyond 40, paid at **1.5×** the hourly rate.
-5. Total pay = `(regular_hours × rate) + (overtime_hours × rate × 1.5)`.
-
-Payroll data can be exported to Excel via the **Export** button on the Payroll page.
-
----
-
-## Seed Data
-
-On first run, `seeds.py` automatically creates:
-
-- 1 admin account (`admin` / `admin123`)
-- 10 employee accounts (all with password `password123`)
-- 8 Leicester-area care home locations with real GPS coordinates
-- 30 days of randomised attendance history
-- 7 upcoming scheduled shifts per active employee
-- 7 training modules with full content
-- 5 company policy documents
-- 12 sample absence requests (mix of statuses)
-- 12 sample internal messages
-- Gamification data (points, badges, streaks) based on attendance history
-- Welcome notifications for each employee
-
----
-
-*Version 2.0 — Workforce Management System for Care Agencies*
+*Workforce Management System — BSc Computer Science Final Year Project*
