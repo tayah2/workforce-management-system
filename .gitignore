@@ -1,0 +1,48 @@
+# ── Python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.Python
+
+# ── Flask / SQLite ────────────────────────────────────────────────────────
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Environment / secrets ─────────────────────────────────────────────────
+.env
+.env.*
+*.env
+!.env.example
+
+# ── Node / Frontend build ─────────────────────────────────────────────────
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.log
+npm-debug.log*
+
+# ── AI / RuFlo tooling (not part of the project source code) ─────────────
+.claude/
+.claude-flow/
+.swarm/
+.mcp.json
+CLAUDE.md
+
+# ── Legacy files (superseded by backend/app/ package) ────────────────────
+backend/app.py
+
+# ── Stray / accidental files ──────────────────────────────────────────────
+backend/,+
+backend/{,
+
+# ── OS / IDE ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
